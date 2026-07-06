@@ -28,3 +28,8 @@ Thumbs.db
 # Weights / data (too large for git)
 *.bin
 demo_data/
+
+# Local run artifacts / logs / backups (tiny-NPU learning setup)
+*.log
+*.DONE
+*.bak
