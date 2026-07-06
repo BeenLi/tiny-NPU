@@ -885,7 +885,7 @@ int main(int argc, char** argv) {
     dut->ucode_len = 0;
     dut->uc_wr_en = 0;
     dut->uc_wr_addr = 0;
-    memset(dut->uc_wr_data, 0, sizeof(dut->uc_wr_data));
+    memset(&dut->uc_wr_data, 0, sizeof(dut->uc_wr_data));
     dut->tb_sram0_wr_en = 0; dut->tb_sram0_wr_addr = 0; dut->tb_sram0_wr_data = 0;
     dut->tb_sram0_rd_en = 0; dut->tb_sram0_rd_addr = 0;
     dut->tb_sram1_wr_en = 0; dut->tb_sram1_wr_addr = 0; dut->tb_sram1_wr_data = 0;
