@@ -15,6 +15,21 @@
 - 阶段大致按依赖递进；**S0–S6 是 LLM Mode 主线**，**S7–S10 是 Graph/ONNX Mode 主线**，**S11 是 FPGA 上板 capstone**。
 - 想快速看构建/运行命令，直接跳到文末 [速查表](#速查表)。
 
+### 学习进度（完成一个阶段就在这里打勾）
+
+- [x] **S0 环境与第一个仿真** —— 2026-08-24 完成
+- [ ] S1 微码 ISA 与控制平面
+- [ ] S2 脉动阵列与 GEMM
+- [ ] S3 定点算术与数学引擎
+- [ ] S4 Transformer Block 与控制编排
+- [ ] S5 端到端 LLM 推理与 INT8 量化
+- [ ] S6 KV-Cache
+- [ ] S7 Graph / ONNX 模式
+- [ ] S8 专用引擎
+- [ ] S9 混合精度 INT8 / FP16
+- [ ] S10 异步调度与性能计数
+- [ ] S11 FPGA 上板（VCU118）· Capstone
+
 ---
 
 ## 1. NPU vs GPU：从 tiny-gpu 到 tiny-NPU
@@ -72,7 +87,8 @@ cmake .. && cmake --build . -j"$(nproc)"
 
 ## 4. 分阶段学习路线
 
-### S0 — 环境与第一个仿真
+### S0 — 环境与第一个仿真 ✅
+- **状态**：**已完成**（2026-08-24 复核）。CMake 一次构建 21 个 target 全部成功；`./npu_sim` 输出 `=== ALL TESTS PASSED ===` —— Register access / DMA loopback / 控制平面 smoke（NOP 微码 ~99 cycle 后 `STATUS=0x1`）三项 PASS。
 - **目标**：工具链跑通，看懂顶层接口。
 - **关键文件**：`Makefile`、`sim/verilator/CMakeLists.txt`、`rtl/top.sv`（AXI4-Lite slave + AXI4 master + mode mux）、`sim/verilator/tb_top.cpp`。
 - **命令**：见上面 [快速上手](#3-快速上手先跑通再看细节)；跑 `./npu_sim`。
