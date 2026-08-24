@@ -101,10 +101,14 @@ def parse_line(line):
         if '=' not in part:
             continue
         key, val = part.split('=', 1)
-        key = key.strip().lower()
+        key = key.strip()
         val = parse_int(val)
-        if key in fields:
-            fields[key] = val
+        # Canonicalise case: M/N/K are stored upper-case in `fields` to match
+        # encode_instruction(**fields); everything else is lower-case. Without
+        # this, "M=/N=/K=" get lower-cased and silently dropped.
+        canon = {'m': 'M', 'n': 'N', 'k': 'K'}.get(key.lower(), key.lower())
+        if canon in fields:
+            fields[canon] = val
 
     return fields
 
