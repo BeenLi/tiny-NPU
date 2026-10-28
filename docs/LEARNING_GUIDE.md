@@ -4,14 +4,14 @@
 > 本文假设你已经跟着 tiny-gpu 的 `docs/`（ISA → 架构 → 执行 → 仿真 → 分支发散 → warp 调度 → warp 内发散）学过一轮，
 > 这里用**你已经掌握的 GPU 概念**做桥梁，逐阶段拆解 NPU。
 >
-> 仓库：`<repo>`（远端 <host>）。环境搭建见 [`SETUP_NOTES.md`](./SETUP_NOTES.md)。
+> 仓库：本仓库 `learning` 分支，文中路径都相对仓库根目录。环境搭建见 [`SETUP_NOTES.md`](./SETUP_NOTES.md)。
 
 ---
 
 ## 0. 这份文档怎么用
 
 - 每个阶段（Stage）给出：**目标 · 关键 RTL 文件 · 运行命令 · GPU 类比 · 建议实验 · 深入方向**。
-- 命令都假设你已经 `cd <repo> && source env.sh`（激活 venv + Verilator 5.050 + HF 镜像）。
+- 命令都假设你位于**仓库根目录**并已 `source env.sh`（激活 .conda-env 里的 Verilator 5.050 + .venv）。
 - 阶段大致按依赖递进；**S0–S6 是 LLM Mode 主线**，**S7–S10 是 Graph/ONNX Mode 主线**，**S11 是 FPGA 上板 capstone**。
 - 想快速看构建/运行命令，直接跳到文末 [速查表](#速查表)。
 
@@ -71,8 +71,7 @@ tiny-NPU 靠控制寄存器 `REG_EXEC_MODE`（AXI 偏移 `0x38`）在两种模�
 ## 3. 快速上手（先跑通再看细节）
 
 ```sh
-ssh <host>
-cd <repo> && source env.sh   # venv + Verilator 5.050 + HF 镜像
+source env.sh   # 在仓库根目录执行：.conda-env（Verilator 5.050）+ .venv
 
 # 用 CMake 构建全部 21 个仿真 target（唯一权威路径）
 cd sim/verilator && mkdir -p build && cd build
@@ -136,9 +135,9 @@ cmake .. && cmake --build . -j"$(nproc)"
 ### S5 — 端到端 LLM 推理与 INT8 量化
 - **目标**：把**真实 GPT-2 权重**从 HuggingFace 导出、量化打包，跑出逐 token 生成。
 - **关键文件**：`python/tools/export_gpt2_weights.py`（导 FP32）、`quantize_pack.py`（INT8 打包 `weights.bin`）、`python/golden/gpt2_infer_golden.py`（Python 金标准）、`sim/verilator/tb_demo_infer.cpp`、`sim/verilator/run_demo.sh`。
-- **命令**（`source env.sh` 已设 `HF_ENDPOINT=hf-mirror.com`）：
+- **命令**（HF 权重经本机代理直连 huggingface.co；若不可达先 `export HF_ENDPOINT=https://hf-mirror.com`）：
   ```sh
-  cd <repo>/sim/verilator
+  cd sim/verilator   # 从仓库根目录进入
   bash run_demo.sh --prompt "Hello" --max-tokens 10                 # 贪心（脚本无执行位，用 bash 调）
   bash run_demo.sh --prompt "Hello" --max-tokens 10 --temperature 0.8 --seed 42   # 采样
   ```
@@ -197,7 +196,7 @@ cmake .. && cmake --build . -j"$(nproc)"
 - **目标**：把 `top.sv` 综合、实现、生成 bitstream，在 **VCU118（Virtex UltraScale+ VU9P）** 上真机跑一次。
   这是 tiny-NPU README "Next Steps" 里仍标记未完成的项（`[ ] FPGA synthesis and on-board demo`），是最好的动手项目。
 - **关键文件 / 现状**：`rtl/top.sv` 已经是"Synthesizable SystemVerilog - Xilinx FPGA Target"，对外是 **AXI4-Lite slave（控制）+ AXI4 master（DMA 数据面）**；README 有 "Synthesize for FPGA (Vivado)" 小节和 16×16 阵列的资源估计。仓库**尚无** `.xdc` 约束和板级封装，需要你补。
-- **本地环境**：本地 Mac 有 **Vivado + VCU118**；上板/综合流程参考本地项目 **`vivado-on-silicon-mac`**（Apple Silicon 上跑 Vivado + smoke / rocket 上板示例）。
+- **本地环境**：本地 Mac 有 **Vivado + VCU118**；上板/综合流程参考本地 Mac 上的 **`vivado-on-silicon-mac`** 项目（Apple Silicon 上跑 Vivado + smoke / rocket 上板示例）。
 - **建议路径**：
   1. **先跑 lint + OOC 综合**：`make lint` 通过后，在 Vivado 里对 `top` 做 out-of-context 综合，读资源占用，和 README 估计对照。
   2. **搭 Block Design**：`JTAG-to-AXI Master`（Vivado 内置，主机通过 TCL 驱动 AXI）→ NPU `s_axil_*`（写控制寄存器）；NPU `m_axi_*` → `AXI SmartConnect` → VCU118 板载 **DDR4（MIG）** 或先用 BRAM 顶替，跑通再换 DDR。
@@ -213,7 +212,7 @@ cmake .. && cmake --build . -j"$(nproc)"
 
 ### 构建 / 运行
 ```sh
-cd <repo> && source env.sh
+source env.sh      # 在仓库根目录执行
 
 make help          # 所有 Makefile target
 make luts          # 生成 LUT ROM（.mem / _init.sv）
@@ -246,7 +245,7 @@ cmake .. && cmake --build . -j"$(nproc)"
 
 ### GPT-2 / LLaMA 推理 demo
 ```sh
-cd <repo>/sim/verilator
+cd sim/verilator   # 从仓库根目录进入
 bash run_demo.sh --prompt "Hello" --max-tokens 10                          # GPT-2 贪心
 bash run_demo.sh --prompt "Hello" --max-tokens 10 --temperature 0.8 --kv-cache
 ```
@@ -255,19 +254,19 @@ bash run_demo.sh --prompt "Hello" --max-tokens 10 --temperature 0.8 --kv-cache
 
 ## 常见问题（Troubleshooting）
 
-- **`verilator: command not found`**：没 `source env.sh`；apt 的 4.010 太老，本项目用源码构建的 **5.050**（在 `~/.local/bin`）。
-- **权重下载卡住 / 403**：`huggingface.co` 在本机被墙，`env.sh` 已把 `HF_ENDPOINT` 指向 `hf-mirror.com`；确认已 `source env.sh`。
+- **`verilator: command not found`**：没 `source env.sh`；本机无 sudo、系统未装 Verilator，本项目用 conda-forge 的 **5.050**（在 `.conda-env/bin`，建法见 [`SETUP_NOTES.md`](./SETUP_NOTES.md)）。
+- **权重下载卡住 / 403**：本机经 HTTP 代理 `127.0.0.1:5555` 直连 `huggingface.co`，先确认 `https_proxy` 已设置（`~/.bashrc`）；仍不通时 `export HF_ENDPOINT=https://hf-mirror.com` 改走镜像。
 - **`ModuleNotFoundError`（numpy/torch/onnx）**：venv 没激活；`source env.sh` 会激活 `.venv`（torch 为 CPU 版）。
-- **CMake 报版本/找不到 Verilator**：确认 `verilator` 在 PATH（`source env.sh`）；本机 CMake 3.13.4，若个别 target 需要更高版本可改用直连 `make sim` 路径。
+- **CMake 报版本/找不到 Verilator**：确认 `verilator` 在 PATH（`source env.sh`），CMake 靠 PATH 找到 `.conda-env/share/verilator/verilator-config.cmake`；本机系统 CMake 3.28.3 已满足 ≥ 3.19 的要求。
 - **`make lint` / `make sim` 报 `fp16_utils_pkg` 找不到**：顶层 Makefile 已过时，改用 CMake 构建（见速查表）。
 - **`./run_demo.sh: Permission denied`**：脚本缺执行位，用 `bash run_demo.sh ...` 调用。
 - **ONNX sim 报 `Could not load program`**：该 sim 是数据驱动的，需先 `python python/onnx_compiler/compile.py --model models/<x>.onnx --outdir <dir>` 生成 `program.bin` 等，再 `./<sim> --datadir <dir>`。
-- **想看波形**：`make wave` 生成 VCD，`gtkwave waves/npu_sim.vcd &`（本机已装 gtkwave）。
+- **想看波形**：`make wave` 依赖已过时的 `make sim`，不可用；改用 `NPU_DUMP=1 ./demo_infer --datadir demo_data --max-tokens 1` 生成 `demo_infer.vcd`。本机有 `/usr/bin/gtkwave`，但服务器没有 `DISPLAY`，需要 X11 转发或把 VCD 拷到本地打开。
 
 ---
 
 ## 参考
 
 - 本仓库 `README.md`：架构、两种模式、完整 ISA 表、21 个 target 详解、FPGA 综合小节。
-- 姊妹项目 `../tiny-gpu`（及其 `docs/` 的 stage1–7）：SIMT GPU 视角，可反复对照。
+- 姊妹项目 `tiny-gpu`（及其 `docs/` 的 stage1–7）：SIMT GPU 视角，可反复对照。本机在 `../tiny-gpu`（与本仓库同级）。
 - [`SETUP_NOTES.md`](./SETUP_NOTES.md)：本机工具链版本与踩坑记录。
