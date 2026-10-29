@@ -19,6 +19,20 @@
 - `docs/LEARNING_GUIDE.md`：从 tiny-gpu 到 tiny-NPU 的分阶段学习路线（S0–S11）。
 - `docs/SETUP_NOTES.md`：本机工具链、网络、踩坑记录与验证结果。
 
+## 学习文档约定（`docs/learning/`）
+
+- 用 repo-learning-path skill 维护：`README.md` 是学习计划与索引；每阶段一篇总览 `NN-0-<主题>-overview.md`（只放地图：架构图、分篇表、待核实清单）；
+  精读分篇 `NN-M-<主题>.md`，`NN` 两位阶段号、`M` 从 1 起、主题用小写英文加短横线。新会话先读 `docs/learning/README.md`，从第一个没打勾的项继续。
+- 每篇只回答 README 待办里写的那个问题；先读代码再写结论，结论落到具体的拍 / 函数 / 信号 / 参数。
+- 标记：✅ 直接从代码或配置读出；❓ 待核实（宁可多标，不要把推测写成事实）；🆕 Sze 书 *Efficient Processing of DNNs*（2020，DOI 10.1007/978-3-031-01766-7）和 tiny-gpu 里都没有的东西。引用写“Sze 书 Ch.x”，必要时辅以 2017 综述（arXiv:1703.09039）“§X”。
+  两份 PDF 在 `docs/learning/supplements/`，受版权 / 许可限制不入库（已在 `.gitignore`）。
+- 代码引用一律是相对本文件、带行号的链接，如 [`systolic_array.sv:42`](../../rtl/gemm/systolic_array.sv#L42)，范围写 `#L42-L50`；行号以当前检出版本为准。
+  仓库外的项目（`../tiny-gpu`、`../LLMServingSim`）只写文字路径，不做链接。
+- 每篇至少一张图，放在相关段落旁并说明看哪几处：现成的图下载到 `figs/official/`；自己画的放 `figs/drawn/`（硬件结构用 verilog-diagram，流程 / 时序用 drawio-skill，都不可用时用 Mermaid）；
+  渲染后亲自看一遍，并在 `figs/README.md` 记来源或依据的 `file:line`。
+- 写完一篇：跑 repo-learning-path 的 `scripts/check_links.py docs/learning/` 修到 0 报错；README 对应项打勾并写日期和链接；总览分篇表填一句话结论；
+  被解决的 ❓ 改成 ✅，新问题加进待核实清单。每篇写完先和用户确认，再写下一篇。
+
 ## 分支与远程
 
 - `main`：保持与原作者 `upstream`（harishsg993010/tiny-NPU）一致，**不在 main 上改**。
